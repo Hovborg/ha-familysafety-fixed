@@ -32,9 +32,89 @@ _LOGGER = logging.getLogger(__name__)
 class FamilySafetySensorEntityDescription(SensorEntityDescription):
     """Describes family_safety sensor entity."""
 
-    value_fn: Callable[[ManagedAccountEntity], str | int | datetime]
+    value_fn: Callable[[ManagedAccountEntity], str | int | float | datetime | None]
     name_fn: Callable[[ManagedAccountEntity], str]
-    native_unit_of_measurement_fn: Callable[[ManagedAccountEntity], str]
+    native_unit_of_measurement_fn: Callable[[ManagedAccountEntity], str | None]
+    attributes_fn: Callable[[ManagedAccountEntity], Mapping[str, Any] | None] | None = None
+
+
+def _screen_time_value(data: ManagedAccountEntity, range_key: str) -> float:
+    """Return a screen-time range value in minutes."""
+    return (
+        data.coordinator.screen_time_ranges
+        .get(data._account_id, {})
+        .get(range_key, {})
+        .get("minutes", 0)
+    )
+
+
+def _screen_time_attributes(
+    data: ManagedAccountEntity,
+    range_key: str,
+) -> Mapping[str, Any]:
+    """Return screen-time range details."""
+    summary = (
+        data.coordinator.screen_time_ranges
+        .get(data._account_id, {})
+        .get(range_key, {})
+    )
+    return {
+        "range_start": summary.get("range_start"),
+        "range_end": summary.get("range_end"),
+        "total_milliseconds": summary.get("total_milliseconds", 0),
+        "device_usage_minutes": summary.get("device_usage_minutes", {}),
+    }
+
+
+def _top_app_value(data: ManagedAccountEntity) -> str | None:
+    """Return today's most-used app name."""
+    return (
+        data.coordinator.application_usage_today
+        .get(data._account_id, {})
+        .get("top_app")
+    )
+
+
+def _top_app_attributes(data: ManagedAccountEntity) -> Mapping[str, Any]:
+    """Return today's app-usage details."""
+    summary = data.coordinator.application_usage_today.get(data._account_id, {})
+    return {
+        "top_minutes": summary.get("top_minutes", 0),
+        "total_minutes": summary.get("total_minutes", 0),
+        "application_usage_minutes": summary.get("application_usage_minutes", {}),
+        "applications": summary.get("applications", []),
+    }
+
+
+def _web_activity_value(data: ManagedAccountEntity) -> int:
+    """Return today's web activity count."""
+    return data.coordinator.web_activity_today.get(data._account_id, {}).get("count", 0)
+
+
+def _web_activity_attributes(data: ManagedAccountEntity) -> Mapping[str, Any]:
+    """Return today's web activity entries."""
+    summary = data.coordinator.web_activity_today.get(data._account_id, {})
+    return {
+        "recent_entries": summary.get("recent_entries", []),
+        "range_start": summary.get("range_start"),
+        "range_end": summary.get("range_end"),
+        "allow_statuses": summary.get("allow_statuses", []),
+    }
+
+
+def _search_activity_value(data: ManagedAccountEntity) -> int:
+    """Return today's search activity count."""
+    return data.coordinator.search_activity_today.get(data._account_id, {}).get("count", 0)
+
+
+def _search_activity_attributes(data: ManagedAccountEntity) -> Mapping[str, Any]:
+    """Return today's search activity entries."""
+    summary = data.coordinator.search_activity_today.get(data._account_id, {})
+    return {
+        "recent_entries": summary.get("recent_entries", []),
+        "range_start": summary.get("range_start"),
+        "range_end": summary.get("range_end"),
+    }
 
 
 GEN_SENSORS: dict[str, FamilySafetySensorEntityDescription] = {
@@ -66,6 +146,55 @@ TIME_SENSORS: dict[str, FamilySafetySensorEntityDescription] = {
         native_unit_of_measurement_fn=lambda data: "min",
         name_fn=lambda data: f"{data._account.first_name} Used Screen Time"
     )
+}
+
+
+EXTENDED_SENSORS: dict[str, FamilySafetySensorEntityDescription] = {
+    "top_app_today": FamilySafetySensorEntityDescription(
+        key="top_app_today",
+        value_fn=_top_app_value,
+        native_unit_of_measurement_fn=lambda data: None,
+        name_fn=lambda data: f"{data._account.first_name} Top App Today",
+        attributes_fn=_top_app_attributes,
+    ),
+    "screen_time_1d": FamilySafetySensorEntityDescription(
+        key="screen_time_1d",
+        value_fn=lambda data: _screen_time_value(data, "1d"),
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement_fn=lambda data: "min",
+        name_fn=lambda data: f"{data._account.first_name} Screen Time Today",
+        attributes_fn=lambda data: _screen_time_attributes(data, "1d"),
+    ),
+    "screen_time_7d": FamilySafetySensorEntityDescription(
+        key="screen_time_7d",
+        value_fn=lambda data: _screen_time_value(data, "7d"),
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement_fn=lambda data: "min",
+        name_fn=lambda data: f"{data._account.first_name} Screen Time Last 7 Days",
+        attributes_fn=lambda data: _screen_time_attributes(data, "7d"),
+    ),
+    "screen_time_30d": FamilySafetySensorEntityDescription(
+        key="screen_time_30d",
+        value_fn=lambda data: _screen_time_value(data, "30d"),
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement_fn=lambda data: "min",
+        name_fn=lambda data: f"{data._account.first_name} Screen Time Last 30 Days",
+        attributes_fn=lambda data: _screen_time_attributes(data, "30d"),
+    ),
+    "web_activity_today": FamilySafetySensorEntityDescription(
+        key="web_activity_today",
+        value_fn=_web_activity_value,
+        native_unit_of_measurement_fn=lambda data: None,
+        name_fn=lambda data: f"{data._account.first_name} Web Activity Today",
+        attributes_fn=_web_activity_attributes,
+    ),
+    "search_activity_today": FamilySafetySensorEntityDescription(
+        key="search_activity_today",
+        value_fn=_search_activity_value,
+        native_unit_of_measurement_fn=lambda data: None,
+        name_fn=lambda data: f"{data._account.first_name} Search Activity Today",
+        attributes_fn=_search_activity_attributes,
+    ),
 }
 
 
@@ -101,6 +230,14 @@ async def async_setup_entry(
                     account_id=account.user_id,
                     description=desc
                 ) for desc in TIME_SENSORS.values()]
+            )
+            entities.extend(
+                [GenericSensor(
+                    coordinator=config_entry.runtime_data,
+                    idx=None,
+                    account_id=account.user_id,
+                    description=desc
+                ) for desc in EXTENDED_SENSORS.values()]
             )
             entities.extend(
                 [GenericSensor(
@@ -182,10 +319,13 @@ class GenericSensor(ManagedAccountEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return additional state attributes."""
+        if self.entity_description.attributes_fn is not None:
+            return self.entity_description.attributes_fn(self)
         if self.entity_description.key == "pending_requests":
             return {
                 "requests": [d for d in self.coordinator.api.pending_requests if d["puid"] == self._account_id]
             }
+        return None
 
 
 class ScreentimeSensor(GenericSensor, SensorEntity):
