@@ -11,7 +11,7 @@ import asyncio
 from homeassistant.core import HomeAssistant
 from pyfamilysafety import FamilySafety
 from pyfamilysafety.account import Account
-from pyfamilysafety.exceptions import AggregatorException
+from pyfamilysafety.exceptions import AggregatorException, HttpException
 from pyfamilysafety.helpers import API_TIMEZONE, localise_datetime
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -25,7 +25,6 @@ _LOGGER = logging.getLogger(__name__)
 SCREEN_TIME_RANGES: dict[str, int] = {
     "1d": 1,
     "7d": 7,
-    "30d": 30,
 }
 
 WEB_ACTIVITY_ALLOW_STATUSES = ("Allowed", "Blocked")
@@ -184,7 +183,7 @@ class FamilySafetyCoordinator(DataUpdateCoordinator):
         """Fetch and update data from the API."""
         try:
             async with asyncio.timeout(59):
-                with contextlib.suppress(AggregatorException):
+                with contextlib.suppress(AggregatorException, HttpException):
                     await self.api.update()
                 await self._async_update_extra_data()
                 return {
@@ -194,6 +193,9 @@ class FamilySafetyCoordinator(DataUpdateCoordinator):
                     "search_activity_today": self.search_activity_today,
                 }
         except Exception as err:
+            if getattr(self, "data", None) is not None:
+                _LOGGER.warning("Family Safety update failed, keeping last data: %s", err)
+                return self.data
             raise UpdateFailed(f"Error communicating with API {err}") from err
 
     async def _async_update_extra_data(self) -> None:
