@@ -13,6 +13,6 @@
     "pyfamilysafety==1.1.3b0"
   ],
   "ssdp": [],
-  "version": "1.2.1-fixed",
+  "version": "1.2.1",
   "zeroconf": []
 }
