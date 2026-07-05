@@ -24,7 +24,11 @@ request short-circuits and never returns an authorization code.
    `prompt=login`, which forces a clean sign-in and reliably returns a real
    `?code=...` on `oauth20_desktop.srf`. Paste that URL back into the config flow
    and setup completes — no external tools or pre-obtained tokens required.
-2. **Dependency bump.** `manifest.json` now requires `pyfamilysafety==1.1.3b0`.
+2. **Home Assistant 2026.x compatibility.** Replaced the removed `FlowResult`
+   with `ConfigFlowResult` and the removed `async_timeout` with the built-in
+   `asyncio.timeout`, so the integration loads on current Home Assistant.
+   (Verified by importing every module against Home Assistant 2026.7.0 +
+   `pyfamilysafety==1.1.2`.)
 3. **Optional refresh-token path.** For advanced / headless setups you can paste
    an existing Microsoft Family Safety `refresh_token` instead of doing the OAuth
    step. This is optional — the normal login flow above is all most users need.

@@ -4,7 +4,7 @@ import contextlib
 import logging
 from datetime import timedelta
 
-import async_timeout
+import asyncio
 
 from homeassistant.core import HomeAssistant
 from pyfamilysafety import FamilySafety
@@ -37,7 +37,7 @@ class FamilySafetyCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Fetch and update data from the API."""
         try:
-            async with async_timeout.timeout(59):
+            async with asyncio.timeout(59):
                 with contextlib.suppress(AggregatorException):
                     return await self.api.update()
         except Exception as err:
