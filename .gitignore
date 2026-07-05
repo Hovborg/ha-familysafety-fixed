@@ -1,0 +1,14 @@
+# Python local environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local secrets / scratch auth material
+.env
+.env.*
+*.token
+*token*.txt
+*refresh*.txt
