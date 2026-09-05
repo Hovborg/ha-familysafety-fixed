@@ -71,3 +71,7 @@ The official pinned hassfest action also validates integration metadata. There a
 15 source/metadata files in the syntax inventory and no functional unit tests yet.
 Neither check authenticates to Microsoft or proves OAuth, token refresh or sensor
 updates against the live service.
+
+Setup descriptions in all three translations use URL placeholders supplied by
+the config flow, as required by hassfest. The rendered help and Microsoft login
+links, including `prompt=login` and the OAuth redirect/scope, are unchanged.
