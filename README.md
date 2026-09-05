@@ -57,3 +57,21 @@ Licensed under the **MIT License** (see `LICENSE`); the original copyright is
 retained.
 
 This is a community fix and is not affiliated with or endorsed by Microsoft.
+
+## Offline CI
+
+GitHub Actions validates the tracked source inventory in `.github/source-check.json`.
+Run `python -m pip install -r .github/requirements-ci.txt` followed by
+`python .github/scripts/validate_source.py`. Python, JSON, YAML and shell files are
+parsed without importing application code. Update the inventory when adding files.
+Actions and dependencies are pinned. Passing syntax checks does not establish live
+service behavior; CI must not use account credentials, private data or devices.
+
+The official pinned hassfest action also validates integration metadata. There are
+15 source/metadata files in the syntax inventory and no functional unit tests yet.
+Neither check authenticates to Microsoft or proves OAuth, token refresh or sensor
+updates against the live service.
+
+Setup descriptions in all three translations use URL placeholders supplied by
+the config flow, as required by hassfest. The rendered help and Microsoft login
+links, including `prompt=login` and the OAuth redirect/scope, are unchanged.

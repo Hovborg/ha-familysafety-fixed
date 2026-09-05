@@ -1,0 +1,17 @@
+[
+  "custom_components/family_safety/__init__.py",
+  "custom_components/family_safety/config_entry.py",
+  "custom_components/family_safety/config_flow.py",
+  "custom_components/family_safety/const.py",
+  "custom_components/family_safety/coordinator.py",
+  "custom_components/family_safety/diagnostics.py",
+  "custom_components/family_safety/entity_base.py",
+  "custom_components/family_safety/manifest.json",
+  "custom_components/family_safety/sensor.py",
+  "custom_components/family_safety/services.yaml",
+  "custom_components/family_safety/switch.py",
+  "custom_components/family_safety/translations/de.json",
+  "custom_components/family_safety/translations/en.json",
+  "custom_components/family_safety/translations/pt.json",
+  "hacs.json"
+]
